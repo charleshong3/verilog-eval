@@ -95,9 +95,11 @@ class Results:
     total_tokens        = 0
     total_cost          = 0.0
     total_gsidx         = 0.0
+    prob_passed = {}
 
     row_strs = []
     for problem,row in self.data.items():
+      prob_passed[problem] = False
 
       outcome_counts = {}
       npass = 0
@@ -116,6 +118,7 @@ class Results:
 
         if record.passfail == ".":
           npass += 1
+          prob_passed[problem] = True
 
         if idx != 0 and idx % 5 == 0:
           row_str += " "
@@ -140,6 +143,15 @@ class Results:
       nsamples      = len(row)
       pass_rate     = int((npass/nsamples)*100)
       pass_rate_sum += pass_rate
+    
+      # Calculate the number of problems passed
+      num_problems = 0
+      num_problems_passed = 0
+      for problem, passed in prob_passed.items():
+          if passed:
+              num_problems_passed += 1
+          num_problems += 1
+      prob_pass_rate = num_problems_passed / num_problems
 
       # Calculate the Gini-Simpson Index
       # https://en.wikipedia.org/wiki/Diversity_index#Gini%E2%80%93Simpson_index
@@ -177,6 +189,7 @@ class Results:
     print(f"avg_tokens_per_resp   = {(total_resp_tokens/total_queries):>10.2f}")
     print(f"avg_tokens_per_query  = {((total_prompt_tokens+total_resp_tokens)/total_queries):>10.2f}")
     print(f"total_cost            = {total_cost:>10.2f}")
+    print(f"prob_pass_rate        = {prob_pass_rate*100:>10.2f}")
     print("")
 
   def write_csv( self, csv_filename ):
