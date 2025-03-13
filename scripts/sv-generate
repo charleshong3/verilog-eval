@@ -37,6 +37,8 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.schema   import SystemMessage, HumanMessage
 from langchain_community.callbacks.manager import get_openai_callback
 
+from custom_llm_wrapper import ChatCustom
+
 #-------------------------------------------------------------------------
 # Command line processing
 #-------------------------------------------------------------------------
@@ -58,7 +60,7 @@ def parse_cmdline():
   p.add_argument( "-l", "--list-models", action="store_true" )
   p.add_argument( "-m", "--model",       type=str,   default="gpt-3.5-turbo" )
   p.add_argument( "-t", "--temperature", type=float, default=0.8 )
-  p.add_argument( "-n", "--max-tokens",  type=int,   default=2048 )
+  p.add_argument( "-n", "--max-tokens",  type=int,   default=8192 )
   p.add_argument( "-p", "--top-p",       type=float, default=0.95 )
   p.add_argument( "-e", "--explain",     action="store_true" )
   p.add_argument( "-x", "--examples",    type=int,   default=0 )
@@ -75,7 +77,12 @@ def parse_cmdline():
 # Models
 #-------------------------------------------------------------------------
 
-openai_models = [
+our_models = [
+  "rtl-llm/qwen7b-larger-chisel-dataset-with-comments",
+  "rtl-llm/qwen7b-larger-chisel-dataset",
+  "rtl-llm/qwen2.5_ordered_vhdl_c_chisel",
+  "rtl-llm/qwen7b-verilog-vhdl-chat-template",
+  "rtl-llm/qwen2.5_ordered_vhdl_chisel_vhdl",
   "rtl-llm/qwen7b-v2c-chat-template",
   "Qwen/Qwen2.5-Coder-7B",
   "meta-llama/CodeLlama-7b-Instruct-hf",
@@ -84,7 +91,9 @@ openai_models = [
   "rtl-llm/codellama-7b-c2v-bf16",
   "rtl-llm/codellama-7b-chisel-bf16",
   "rtl-llm/codellama_12_06",
-  "rtl-llm/opt-1.3b",
+  "rtl-llm/opt-1.3b",]
+
+openai_models = [
   "gpt-3.5-turbo",
   "gpt-4",
   "gpt-4-turbo",
@@ -211,6 +220,10 @@ Enclose your code with [BEGIN] and [DONE]. Only output the code snippet
 and do NOT output anything else.
 """
 
+# prompt_no_explain_suffix="""
+# Enclose your code with [BEGIN] and [DONE].
+# """
+
 #-------------------------------------------------------------------------
 # Main
 #-------------------------------------------------------------------------
@@ -222,6 +235,12 @@ def main():
   # Check models
 
   if opts.list_models:
+    print( "" )
+    print( "Custom Models" )
+
+    for model in our_models:
+      print( f" - {model}" )
+
     print( "" )
     print( "OpenAI Models" )
 
@@ -254,7 +273,7 @@ def main():
   if opts.model in model_aliases:
     model = model_aliases[opts.model]
 
-  if model not in openai_models + google_models + nim_chat_models + manual_models:
+  if model not in our_models + openai_models + google_models + nim_chat_models + manual_models:
     print("")
     print(f"ERROR: Unknown model {model}")
     print("")
@@ -364,8 +383,14 @@ def main():
   #msgs = [ {"role": "user", "content": full_prompt} ]
 
   # Query the LLM
-
-  if model in openai_models:
+  if model in our_models:
+    llm = ChatCustom(
+      model       = model,
+      temperature = temperature,
+      top_p       = top_p,
+      max_tokens  = max_tokens,
+    )
+  elif model in openai_models:
     openai_api_key = "EMPTY"
     openai_api_base = "http://localhost:8000/v1"
     llm = ChatOpenAI(
@@ -401,7 +426,9 @@ def main():
     # should never reach here
     return
 
-  if model not in manual_models:
+  if model in our_models:
+    resp, cb = llm.chat(system_msg, full_prompt)
+  elif model not in manual_models:
     for _ in range(10):
       try:
         with get_openai_callback() as cb:
@@ -580,13 +607,10 @@ def main():
           found_code_start = True
 
       elif found_code_start and not found_code_end:
-        if line.strip() == "[DONE]" or line.strip() == "[END]":
+        if line.strip() == "[DONE]":
           found_code_end = True
         elif line.rstrip().endswith("[DONE]"):
           found_code_lines.append( line.rstrip().replace("[DONE]","") )
-          found_code_end = True
-        elif line.rstrip().endswith("[END]"):
-          found_code_lines.append( line.rstrip().replace("[END]","") )
           found_code_end = True
         else:
           found_code_lines.append( line )
