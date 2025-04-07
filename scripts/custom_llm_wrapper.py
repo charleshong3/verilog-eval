@@ -36,5 +36,6 @@ class ChatCustom:
         print("")
         time.sleep(20)
 
+    resp.content = resp.content.replace('```verilog', '').replace('```', '')
     resp.content = resp.content.replace("[END]", "[DONE]")
     return resp, cb

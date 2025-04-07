@@ -78,13 +78,22 @@ def parse_cmdline():
 #-------------------------------------------------------------------------
 
 our_models = [
+  "rtl-llm/qwen-32b-vhdl-1-epoch",
+  "rtl-llm/qwen-14b-vhdl-4-epoch",
+  "rtl-llm/qwen-14b-vhdl-lr-10-1-epoch",
+  "rtl-llm/qwen-14b-vhdl-lr-10",
+  "rtl-llm/qwen-14b-vhdl",
+  "rtl-llm/qwen-14b-chisel",
   "rtl-llm/qwen7b-larger-chisel-dataset-with-comments",
   "rtl-llm/qwen7b-larger-chisel-dataset",
   "rtl-llm/qwen2.5_ordered_vhdl_c_chisel",
   "rtl-llm/qwen7b-verilog-vhdl-chat-template",
+  "rtl-llm/qwen7b-verilog-vhdl",
   "rtl-llm/qwen2.5_ordered_vhdl_chisel_vhdl",
   "rtl-llm/qwen7b-v2c-chat-template",
-  "Qwen/Qwen2.5-Coder-7B",
+  "Qwen/Qwen2.5-Coder-32B-Instruct",
+  "Qwen/Qwen2.5-Coder-14B-Instruct",
+  "Qwen/Qwen2.5-Coder-7B-Instruct",
   "meta-llama/CodeLlama-7b-Instruct-hf",
   "rtl-llm/opt-1.3b",
   "rtl-llm/codellama-7b-bf16",
