@@ -29,6 +29,26 @@ from dataclasses import dataclass
 
 from langchain.schema   import SystemMessage, HumanMessage
 
+from math import comb
+
+def pass_at_k(n: int, c: int, k: int) -> float:
+    """
+    Computes pass@k: the probability that at least one of the top-k samples is correct.
+    
+    Parameters:
+    - n (int): total number of samples
+    - c (int): number of correct samples
+    - k (int): the "k" in pass@k
+
+    Returns:
+    - float: estimated pass@k
+    """
+    if c == 0 or k > n:
+        return 0.0
+    if c >= n - k + 1:
+        return 1.0  # optimization: all possible selections include a correct one
+    return 1.0 - comb(n - c, k) / comb(n, k)
+
 #-------------------------------------------------------------------------
 # Command line processing
 #-------------------------------------------------------------------------
@@ -96,6 +116,7 @@ class Results:
     total_cost          = 0.0
     total_gsidx         = 0.0
     prob_passed = {}
+    pass_at_10s = []
 
     row_strs = []
     for problem,row in self.data.items():
@@ -153,6 +174,9 @@ class Results:
           num_problems += 1
       prob_pass_rate = num_problems_passed / num_problems
 
+      pass_at_10 = pass_at_k(nsamples, npass, 10)
+      pass_at_10s.append(pass_at_10)
+
       # Calculate the Gini-Simpson Index
       # https://en.wikipedia.org/wiki/Diversity_index#Gini%E2%80%93Simpson_index
 
@@ -190,6 +214,7 @@ class Results:
     print(f"avg_tokens_per_query  = {((total_prompt_tokens+total_resp_tokens)/total_queries):>10.2f}")
     print(f"total_cost            = {total_cost:>10.2f}")
     print(f"prob_pass_rate        = {prob_pass_rate*100:>10.2f}")
+    print(f"pass @ 10             = {sum(pass_at_10s)/len(pass_at_10s)*100:>10.2f}")
     print("")
 
   def write_csv( self, csv_filename ):
