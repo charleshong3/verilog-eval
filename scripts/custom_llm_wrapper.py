@@ -38,4 +38,6 @@ class ChatCustom:
 
     resp.content = resp.content.replace('```verilog', '').replace('```', '')
     resp.content = resp.content.replace("[END]", "[DONE]")
+    resp.content = resp.content.replace("[BEGIN]", "[BEGIN]\n")
+    resp.content = resp.content.replace("[DONE]", "\n[DONE]")
     return resp, cb
