@@ -282,11 +282,13 @@ def main():
   if opts.model in model_aliases:
     model = model_aliases[opts.model]
 
+  custom_model = False
   if model not in our_models + openai_models + google_models + nim_chat_models + manual_models:
     print("")
-    print(f"ERROR: Unknown model {model}")
+    print(f"WARNING: Unknown model {model}")
     print("")
-    return
+    # return
+    custom_model = True
 
   task = opts.task
   if task not in available_tasks:
@@ -392,14 +394,7 @@ def main():
   #msgs = [ {"role": "user", "content": full_prompt} ]
 
   # Query the LLM
-  if model in our_models:
-    llm = ChatCustom(
-      model       = model,
-      temperature = temperature,
-      top_p       = top_p,
-      max_tokens  = max_tokens,
-    )
-  elif model in openai_models:
+  if model in openai_models:
     openai_api_key = "EMPTY"
     openai_api_base = "http://localhost:8000/v1"
     llm = ChatOpenAI(
@@ -432,10 +427,17 @@ def main():
     with open( output_prompt_filename + "_systemprompt.txt", 'w' ) as output_prompt_file:
       print( system_msg, file=output_prompt_file )
   else:
-    # should never reach here
-    return
+    llm = ChatCustom(
+      model       = model,
+      temperature = temperature,
+      top_p       = top_p,
+      max_tokens  = max_tokens,
+    )
+  # else:
+  #   # should never reach here
+  #   return
 
-  if model in our_models:
+  if custom_model:
     resp, cb = llm.chat(system_msg, full_prompt)
   elif model not in manual_models:
     for _ in range(10):
